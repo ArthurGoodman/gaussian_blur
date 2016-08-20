@@ -93,26 +93,30 @@ int main(int argc, char **argv) {
     fftwf_execute(filter_plan);
     fftwf_destroy_plan(filter_plan);
 
-    for (int c = 0; c < 3; c++) {
-        std::fill((float *)input, (float *)(input + width * height), 0.0f);
+    for (int i = 0; i < 10; i++) {
+        for (int c = 0; c < 3; c++) {
+            std::fill((float *)input, (float *)(input + width * height), 0.0f);
 
-        for (int x = 0; x < width; x++)
-            for (int y = 0; y < height; y++)
-                input[index(x, y)][0] = getChannel(image.pixel(x, y), c);
+            for (int x = 0; x < width; x++)
+                for (int y = 0; y < height; y++)
+                    input[index(x, y)][0] = getChannel(image.pixel(x, y), c);
 
-        fftwf_execute(forward_plan);
+            fftwf_execute(forward_plan);
 
-        for (int x = 0; x < width; x++)
-            for (int y = 0; y < height; y++) {
-                output[index(x, y)][0] *= filter[index(x, y)][0];
-                output[index(x, y)][1] *= filter[index(x, y)][0];
-            }
+            for (int x = 0; x < width; x++)
+                for (int y = 0; y < height; y++) {
+                    output[index(x, y)][0] *= filter[index(x, y)][0];
+                    output[index(x, y)][1] *= filter[index(x, y)][0];
+                }
 
-        fftwf_execute(backward_plan);
+            fftwf_execute(backward_plan);
 
-        for (int x = 0; x < width; x++)
-            for (int y = 0; y < height; y++)
-                blurred.setPixel(x, y, setChannel(blurred.pixel(x, y), c, round(output[index(x, y)][0]) / width / height));
+            for (int x = 0; x < width; x++)
+                for (int y = 0; y < height; y++)
+                    blurred.setPixel(x, y, setChannel(blurred.pixel(x, y), c, round(output[index(x, y)][0]) / width / height));
+        }
+
+        image = blurred;
     }
 
     fftwf_free(input);
