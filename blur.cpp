@@ -128,5 +128,7 @@ int main(int argc, char **argv) {
     label.setPixmap(QPixmap::fromImage(blurred));
     label.show();
 
+    blurred.save("blurred.bmp");
+
     return app.exec();
 }
