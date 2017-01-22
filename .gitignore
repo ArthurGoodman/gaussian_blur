@@ -1,0 +1,8 @@
+*.o
+*.exe
+*.dll
+*.stash
+Makefile
+*.Debug
+*.Release
+*.user
