@@ -6,3 +6,4 @@ Makefile
 *.Debug
 *.Release
 *.user
+blur

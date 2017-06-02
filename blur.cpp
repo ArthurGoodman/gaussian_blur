@@ -1,8 +1,8 @@
 #include <QApplication>
 
-#include <omp.h>
 #include <fftw3.h>
 #include <functional>
+#include <omp.h>
 
 #include <QtWidgets>
 
@@ -100,7 +100,7 @@ QRgb setChannel(QRgb rgb, int c, int v) {
 int main(int argc, char **argv) {
     QApplication app(argc, argv);
 
-    const int borderSize = 0;
+    const int borderSize = 100;
 
     fftwf_complex *input, *filter, *output;
     fftwf_plan forward_plan, backward_plan;
@@ -116,9 +116,9 @@ int main(int argc, char **argv) {
 
     fftwf_plan_with_nthreads(omp_get_max_threads());
 
-    input = (fftwf_complex *)fftwf_malloc(width * height * sizeof(fftwf_complex));
-    filter = (fftwf_complex *)fftwf_malloc(width * height * sizeof(fftwf_complex));
-    output = (fftwf_complex *)fftwf_malloc(width * height * sizeof(fftwf_complex));
+    input = (fftwf_complex *) fftwf_malloc(width * height * sizeof(fftwf_complex));
+    filter = (fftwf_complex *) fftwf_malloc(width * height * sizeof(fftwf_complex));
+    output = (fftwf_complex *) fftwf_malloc(width * height * sizeof(fftwf_complex));
 
     forward_plan = fftwf_plan_dft_2d(height, width, input, output, FFTW_FORWARD, FFTW_MEASURE);
     backward_plan = fftwf_plan_dft_2d(height, width, output, output, FFTW_BACKWARD, FFTW_MEASURE);
@@ -126,7 +126,7 @@ int main(int argc, char **argv) {
     fftwf_plan filter_plan = fftwf_plan_dft_2d(height, width, filter, filter, FFTW_FORWARD, FFTW_MEASURE);
 
     auto compute = [&](int sigma) {
-        std::fill((float *)filter, (float *)(filter + width * height), 0.0f);
+        std::fill((float *) filter, (float *) (filter + width * height), 0.0f);
 
         const float a = 1.0 / 2 / M_PI / sigma / sigma;
 
@@ -137,11 +137,30 @@ int main(int argc, char **argv) {
         fftwf_execute(filter_plan);
 
         for (int c = 0; c < 3; c++) {
-            std::fill((float *)input, (float *)(input + width * height), 0.0f);
+            std::fill((float *) input, (float *) (input + width * height), 0.0f);
 
-            for (int x = 0; x < width - 2 * borderSize; x++)
-                for (int y = 0; y < height - 2 * borderSize; y++)
-                    input[index(x + borderSize, y + borderSize)][0] = getChannel(image.pixel(x, y), c);
+            // for (int x = 0; x < width - 2 * borderSize; x++)
+            //     for (int y = 0; y < height - 2 * borderSize; y++)
+            //         input[index(x + borderSize, y + borderSize)][0] = getChannel(image.pixel(x, y), c);
+
+            for (int x = 0; x < width; x++)
+                for (int y = 0; y < height; y++) {
+                    int nx = x - borderSize, ny = y - borderSize;
+
+                    if (x < borderSize)
+                        nx = abs(x - borderSize);
+
+                    if (y < borderSize)
+                        ny = abs(y - borderSize);
+
+                    if (x > width - 1 - borderSize)
+                        nx = 2 * width - 3 * borderSize - 1 - x;
+
+                    if (y > height - 1 - borderSize)
+                        ny = 2 * height - 3 * borderSize - 1 - y;
+
+                    input[index(x, y)][0] = getChannel(image.pixel(nx, ny), c);
+                }
 
             fftwf_execute(forward_plan);
 
